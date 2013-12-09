@@ -9,7 +9,7 @@ this.Element && Element.prototype.attachEvent && !Element.prototype.addEventList
 	addToPrototype("addEventListener", function (type, listener) {
 		var
 		target = this,
-		listeners = target.addEventListener.listeners = target.addEventListener.listeners || {},
+		listeners = target._c1_listeners = target._c1_listeners || {},
 		typeListeners = listeners[type] = listeners[type] || [];
 
 		// if no events exist, attach the listener
@@ -34,7 +34,6 @@ this.Element && Element.prototype.attachEvent && !Element.prototype.addEventList
 					for (var ii = 0, typeListener; typeListener = typeListeners[ii]; ++ii) {
 						if (typeListener == typeListenerCache) {
 							typeListener.call(target, event);
-
 							break;
 						}
 					}
@@ -50,14 +49,13 @@ this.Element && Element.prototype.attachEvent && !Element.prototype.addEventList
 	addToPrototype("removeEventListener", function (type, listener) {
 		var
 		target = this,
-		listeners = target.addEventListener.listeners = target.addEventListener.listeners || {},
+		listeners = target._c1_listeners = target._c1_listeners || {},
 		typeListeners = listeners[type] = listeners[type] || [];
 
 		// remove the newest matching event from the master event list
 		for (var i = typeListeners.length - 1, typeListener; typeListener = typeListeners[i]; --i) {
 			if (typeListener == listener) {
 				typeListeners.splice(i, 1);
-
 				break;
 			}
 		}
@@ -73,7 +71,7 @@ this.Element && Element.prototype.attachEvent && !Element.prototype.addEventList
 		var
 		target = this,
 		type = eventObject.type,
-		listeners = target.addEventListener.listeners = target.addEventListener.listeners || {},
+		listeners = target._c1_listeners = target._c1_listeners || {},
 		typeListeners = listeners[type] = listeners[type] || [];
 
 		try {
@@ -92,18 +90,16 @@ this.Element && Element.prototype.attachEvent && !Element.prototype.addEventList
 		get: function () {
 			var self = this;
 
-			return function CustomEvent(type, eventInitDict) {
+			return function CustomEvent(type, detail) {
+				detail = detail || {};
 				var event = self.document.createEventObject(), key;
 
 				event.type = type;
-				for (key in eventInitDict) {
-					if (key == 'cancelable'){
-						event.returnValue = !eventInitDict.cancelable;
-					} else if (key == 'bubbles'){
-						event.cancelBubble = !eventInitDict.bubbles;
-					} else if (key == 'detail'){
-						event.detail = eventInitDict.detail;
-					}
+				event.returnValue = !detail.cancelable;
+				event.cancelBubble = !detail.bubbles;
+
+				for (key in detail) {
+					event[key] = detail[key];
 				}
 				return event;
 			};
@@ -114,12 +110,9 @@ this.Element && Element.prototype.attachEvent && !Element.prototype.addEventList
 	function ready(event) {
 		if (ready.interval && document.body) {
 			ready.interval = clearInterval(ready.interval);
-
 			document.dispatchEvent(new CustomEvent("DOMContentLoaded"));
 		}
 	}
-
 	ready.interval = setInterval(ready, 1);
-
 	window.addEventListener("load", ready);
 })();
